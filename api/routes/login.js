@@ -1,5 +1,14 @@
+import jwt from "jsonwebtoken";
+import "dotenv/config";
+import authenticate from "../auth.js";
+
 export default function login(server, path) {
   path += "/login";
+
+  const instance =
+    process.env.INSTANCE_NAME ||
+    process.env.HOSTNAME ||
+    "unknown";
 
   server.post(path, (request, response) => {
     const { username } = request.body;
@@ -10,38 +19,38 @@ export default function login(server, path) {
       });
     }
 
-    request.session.user = {
-      username: username
-    };
+    const token = jwt.sign(
+      {
+        username
+      },
+      process.env.TOKEN_SECRET,
+      {
+        algorithm: "HS256",
+        expiresIn: "30sec",
+        issuer: "scaling-demo-api",
+        audience: "scaling-demo-client"
+      }
+    );
 
     return response.status(201).json({
-      message: "You have successfully logged in."
+      message: "You have successfully logged in.",
+      token,
+      expires_in: "30 sec",
+      instance
     });
   });
 
-  server.get(path, (request, response) => {
-    if (!request.session.user) {
-      return response.status(404).json({
-        message: "No one is logged in."
-      });
-    }
-
+  server.get(path, authenticate, (request, response) => {
     return response.status(200).json({
-      username: request.session.user.username
+      username: request.user.username,
+      instance
     });
   });
 
-  server.delete(path, (request, response) => {
-    request.session.destroy((error) => {
-      if (error) {
-        return response.status(404).json({
-          message: "No one is logged in."
-        });
-      }
-    });
-
+  server.delete(path, authenticate, (request, response) => {
     return response.status(200).json({
-      message: "Logged out."
+      message: "Remove the token on the client.",
+      instance
     });
   });
 }

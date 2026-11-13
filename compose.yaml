@@ -35,6 +35,8 @@ services:
       DB_USER: bookinguser
       DB_PASSWORD: bookingpassword
 
+      TOKEN_SECRET: min-token-hemlighet
+
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +56,8 @@ services:
       DB_USER: bookinguser
       DB_PASSWORD: bookingpassword
 
+      TOKEN_SECRET: min-token-hemlighet
+
     depends_on:
       db:
         condition: service_healthy
@@ -72,6 +76,8 @@ services:
       DB_DATABASE: booking
       DB_USER: bookinguser
       DB_PASSWORD: bookingpassword
+
+      TOKEN_SECRET: min-token-hemlighet
 
     depends_on:
       db:
