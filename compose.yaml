@@ -20,6 +20,17 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:8-alpine
+
+    ports:
+      - "127.0.0.1:6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
   api1:
     build:
       context: .
@@ -36,9 +47,12 @@ services:
       DB_PASSWORD: bookingpassword
 
       TOKEN_SECRET: min-token-hemlighet
+      REDIS_URL: redis://redis:6379
 
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   api2:
@@ -57,9 +71,12 @@ services:
       DB_PASSWORD: bookingpassword
 
       TOKEN_SECRET: min-token-hemlighet
+      REDIS_URL: redis://redis:6379
 
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   api3:
@@ -78,9 +95,12 @@ services:
       DB_PASSWORD: bookingpassword
 
       TOKEN_SECRET: min-token-hemlighet
+      REDIS_URL: redis://redis:6379
 
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   nginx:

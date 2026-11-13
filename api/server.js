@@ -12,9 +12,7 @@ server.use(express.json());
 
 async function startServer() {
   try {
-    console.log("Connected to Database.");
     await pool.query("SELECT 1;");
-
     console.log("Connected to Database.");
 
     routesRegister(server);

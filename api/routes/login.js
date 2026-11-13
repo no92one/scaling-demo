@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import authenticate from "../auth.js";
+import { randomUUID } from "node:crypto";
+import redisClient from "../redis-connection.js";
 
 export default function login(server, path) {
   path += "/login";
@@ -26,31 +28,61 @@ export default function login(server, path) {
       process.env.TOKEN_SECRET,
       {
         algorithm: "HS256",
-        expiresIn: "30sec",
+        expiresIn: "15m",
         issuer: "scaling-demo-api",
-        audience: "scaling-demo-client"
+        audience: "scaling-demo-client",
+        jwtid: randomUUID()
       }
     );
 
     return response.status(201).json({
       message: "You have successfully logged in.",
       token,
-      expires_in: "30 sec",
+      expires_in: "15m",
       instance
     });
   });
 
   server.get(path, authenticate, (request, response) => {
+    console.log(request.user)
     return response.status(200).json({
       username: request.user.username,
       instance
     });
   });
 
-  server.delete(path, authenticate, (request, response) => {
-    return response.status(200).json({
-      message: "Remove the token on the client.",
-      instance
-    });
+  server.delete(path, authenticate, async (request, response) => {
+    try {
+      const { jti, exp } = request.user;
+
+      const now = Math.floor(Date.now() / 1000);
+      const ttl = exp - now;
+
+      if (ttl <= 0) {
+        return response.status(401).json({
+          message: "Invalid or expired token."
+        });
+      }
+
+      await redisClient.set(
+        `blacklist:${jti}`,
+        "revoked",
+        {
+          EX: ttl
+        }
+      );
+
+      return response.status(200).json({
+        message: "Remove the token on the client.",
+        instance
+      });
+
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      return response.status(503).json({
+        message: "Could not complete logout."
+      });
+    }
   });
 }
