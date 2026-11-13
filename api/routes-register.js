@@ -1,4 +1,5 @@
 import bookings from "./routes/bookings.js";
+import login from "./routes/login.js";
 
 export default function routesRegister(server) {
   const path = "/api";
@@ -21,5 +22,6 @@ export default function routesRegister(server) {
   });
 
   bookings(server, path);
+  login(server, path);
 
 }
